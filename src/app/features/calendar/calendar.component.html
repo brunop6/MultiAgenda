@@ -1,0 +1,240 @@
+<div class="calendar-container">
+  <!-- Calendário Mensal -->
+  <mat-card class="calendar-card" *ngIf="currentView === 'month'">
+    <!-- Toolbar do Calendário -->
+    <mat-toolbar class="calendar-toolbar">
+      <div class="toolbar-left">
+        <button mat-icon-button (click)="navigateToPrevious()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button mat-button (click)="navigateToToday()">Hoje</button>
+        <button mat-icon-button (click)="navigateToNext()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <div class="toolbar-center">
+        <h2>{{ currentMonth?.monthName }} {{ currentMonth?.year }}</h2>
+      </div>
+
+      <div class="toolbar-right">
+        <!--
+        <button mat-button color="accent" (click)="createTestEvent()">
+          <mat-icon>add</mat-icon>
+          Evento
+        </button>
+        -->
+        <mat-select
+          [(value)]="currentView"
+          (selectionChange)="onViewChange($event.value)"
+          [style.min-width.px]="120"
+        >
+          <mat-option value="month">Mês</mat-option>
+          <mat-option value="week">Semana</mat-option>
+        </mat-select>
+      </div>
+    </mat-toolbar>
+
+    <div class="month-view">
+      <div class="calendar-grid">
+        <!-- Cabeçalho dos dias da semana -->
+        <div class="calendar-header">
+          <div class="day-header" *ngFor="let day of dayHeaders">{{ day }}</div>
+        </div>
+
+        <!-- Dias do mês -->
+        <div class="calendar-body" *ngIf="currentMonth">
+          <div
+            class="calendar-week"
+            *ngFor="let week of currentMonth.weeks; let weekIndex = index"
+          >
+            <div
+              class="calendar-day"
+              *ngFor="let day of week.days; let dayIndex = index"
+              [class.other-month]="!day.isCurrentMonth"
+              [class.today]="day.isToday"
+              [class.selected]="day.isSelected"
+              (click)="selectDate(day.date)"
+              (dblclick)="openEventFormForDate(day.date)"
+            >
+              <div class="day-number">{{ day.date.getDate() }}</div>
+
+              <div class="day-events">
+                <div
+                  class="event-item"
+                  *ngFor="let event of getEventsForDay(day.date)"
+                  [style.background-color]="event.color"
+                  (click)="openEventDetail(event, $event)"
+                  title="{{ getEventTooltip(event) }}"
+                >
+                  <!-- Círculo com cor do usuário -->
+                  <div
+                    class="user-indicator"
+                    [style.background-color]="getUserColor(event.userId)"
+                  ></div>
+
+                  <div class="event-time">
+                    {{ formatTime(event.startTime) }}
+                  </div>
+                  <div class="event-name">{{ event.name }}</div>
+                  <div class="event-location" *ngIf="event.location">
+                    <mat-icon class="location-icon">location_on</mat-icon>
+                    {{ event.location }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botão para adicionar evento (aparece ao hover) -->
+              <button
+                mat-icon-button
+                class="add-event-btn"
+                (click)="openEventFormForDate(day.date, $event)"
+                title="Adicionar evento"
+              >
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Vista Semanal -->
+  <mat-card class="calendar-card" *ngIf="currentView === 'week'">
+    <!-- Toolbar do Calendário -->
+    <mat-toolbar class="calendar-toolbar">
+      <div class="toolbar-left">
+        <button mat-icon-button (click)="navigateToPrevious()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button mat-button (click)="navigateToToday()">Hoje</button>
+        <button mat-icon-button (click)="navigateToNext()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <div class="toolbar-center">
+        <h2>{{ currentMonth?.monthName }} {{ currentMonth?.year }}</h2>
+      </div>
+
+      <div class="toolbar-right">
+        <!-- Controles de Zoom -->
+        <div class="zoom-controls">
+          <button mat-icon-button (click)="zoomOut()" [disabled]="zoomLevel <= minZoom" title="Zoom Out (Ctrl + -)">
+            <mat-icon>zoom_out</mat-icon>
+          </button>
+          <span class="zoom-level" title="Ctrl + Scroll ou Ctrl + +/- para zoom">{{ (zoomLevel * 100) | number:'1.0-0' }}%</span>
+          <button mat-icon-button (click)="zoomIn()" [disabled]="zoomLevel >= maxZoom" title="Zoom In (Ctrl + +)">
+            <mat-icon>zoom_in</mat-icon>
+          </button>
+          <button mat-icon-button (click)="resetZoom()" title="Reset Zoom (Ctrl + 0)">
+            <mat-icon>center_focus_strong</mat-icon>
+          </button>
+        </div>
+        
+        <!--
+          <button mat-button color="accent" (click)="createTestEvent()">
+            <mat-icon>add</mat-icon>
+            Evento
+          </button>
+          -->
+        <mat-select
+          [(value)]="currentView"
+          (selectionChange)="onViewChange($event.value)"
+          [style.min-width.px]="120"
+        >
+          <mat-option value="month">Mês</mat-option>
+          <mat-option value="week">Semana</mat-option>
+        </mat-select>
+      </div>
+    </mat-toolbar>
+
+    <div class="week-view">
+      <!-- Cabeçalho da semana -->
+      <div class="week-header">
+        <div class="time-column-header">Horário</div>
+        <div
+          class="day-header"
+          *ngFor="let day of weekDays; let i = index"
+          [class.today]="day.isToday"
+        >
+          <div class="day-name">{{ getDayName(day.date.getDay()) }}</div>
+          <div class="day-number">{{ day.date.getDate() }}</div>
+        </div>
+      </div>
+
+      <!-- Conteúdo da semana -->
+      <div class="week-content" #weekContent>
+        <!-- Container para eventos com posicionamento absoluto -->
+        <div class="week-events-overlay">
+          <ng-container *ngFor="let day of weekDays; let dayIndex = index">
+            <div class="day-events-column" [style.left.%]="(100/7) * dayIndex" [style.width.%]="100/7">
+              <div
+                class="calendar-event"
+                *ngFor="let eventPosition of getEventsForDayWithPosition(day.date)"
+                [style.background-color]="eventPosition.event.color"
+                [style.height.px]="eventPosition.height"
+                [style.top.px]="eventPosition.top"
+                [style.left.%]="eventPosition.left"
+                [style.width.%]="eventPosition.width"
+                (click)="openEventDetail(eventPosition.event, $event)"
+                [title]="getEventTooltip(eventPosition.event)"
+              >
+                <!-- Círculo com cor do usuário -->
+                <div
+                  class="user-indicator"
+                  [style.background-color]="getUserColor(eventPosition.event.userId)"
+                ></div>
+
+                <div class="event-title">{{ eventPosition.event.name }}</div>
+                <div class="event-time">
+                  {{ formatTime(eventPosition.event.startTime) }} -
+                  {{ formatTime(eventPosition.event.endTime) }}
+                </div>
+                <div class="event-location" *ngIf="eventPosition.event.location">
+                  <mat-icon>location_on</mat-icon>
+                  {{ eventPosition.event.location }}
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Linhas de horário -->
+        <ng-container *ngFor="let hour of timeSlots">
+          <!-- Coluna de horário -->
+          <div class="time-slot time-column" [ngStyle]="getTimeSlotStyle()">{{ formatHour(hour) }}</div>
+
+          <!-- Colunas dos dias -->
+          <div
+            class="time-slot day-column"
+            [ngStyle]="getTimeSlotStyle()"
+            *ngFor="let day of weekDays; let dayIndex = index"
+            (click)="openEventFormForDate(day.date, $event)"
+          >
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Filtros de Usuário -->
+  <mat-card class="user-filters" *ngIf="users.length > 0">
+    <mat-card-content>
+      <h3>Agendas</h3>
+      <div class="user-checkboxes">
+        <mat-checkbox
+          *ngFor="let user of users"
+          [checked]="selectedUserIds.includes(user.id)"
+          (change)="toggleUser(user.id, $event.checked)"
+        >
+          <div class="user-option">
+            <div class="user-color" [style.background-color]="user.color"></div>
+            {{ user.name }}
+          </div>
+        </mat-checkbox>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
