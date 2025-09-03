@@ -86,7 +86,7 @@ import { AuthService } from '../../../core/services/auth.service';
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       padding: 16px;
     }
@@ -187,7 +187,7 @@ export class LoginComponent implements OnInit {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
-        
+
         this.router.navigate(['/calendar']);
       } catch (error: any) {
         this.snackBar.open(error.message || 'Erro ao fazer login', 'Fechar', {

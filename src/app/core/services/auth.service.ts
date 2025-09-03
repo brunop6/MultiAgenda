@@ -58,6 +58,9 @@ export class AuthService {
   async signOut(): Promise<void> {
     try {
       await signOut(this.auth);
+
+      // Reload the page
+      location.reload();
     } catch (error) {
       throw this.handleAuthError(error);
     }

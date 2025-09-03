@@ -13,8 +13,7 @@ export class EventService {
   private isLoading = false;
 
   constructor(private firestore: Firestore) {
-    console.log('EventService: Constructor called, firestore:', firestore);
-    this.loadEvents();
+    // O carregamento será controlado pelo componente após autenticação
   }
 
   async createEvent(eventData: CreateEventRequest, userId: string): Promise<string> {
@@ -110,12 +109,10 @@ export class EventService {
 
   private async queryEventsByFilter(filter: EventFilter): Promise<Event[]> {
     try {
-      console.log('Consultando eventos com filtro:', filter);
       let q = query(this.eventsCollection);
 
       // Filtro por data
       if (filter.startDate && filter.endDate) {
-        console.log('Aplicando filtro de data:', filter.startDate, 'até', filter.endDate);
         q = query(q, 
           where('date', '>=', Timestamp.fromDate(filter.startDate)),
           where('date', '<=', Timestamp.fromDate(filter.endDate))
@@ -125,23 +122,17 @@ export class EventService {
       // Ordenar por data
       q = query(q, orderBy('date'), orderBy('startTime'));
 
-      console.log('Executando query...');
       const querySnapshot = await getDocs(q);
       const events: Event[] = [];
 
-      console.log('Total de documentos encontrados:', querySnapshot.size);
-
       querySnapshot.forEach(doc => {
         const event = this.mapDocToEvent(doc.id, doc.data());
-        console.log('Evento encontrado:', event);
         
         // Filtrar por usuários se especificado
         if (filter.userIds && filter.userIds.length > 0) {
           const isUserEvent = filter.userIds.includes(event.userId);
           const isParticipant = event.participants.some(p => filter.userIds!.includes(p));
           const isSharedAndIncluded = event.isShared && filter.includeShared;
-          
-          console.log('Verificando filtros - isUserEvent:', isUserEvent, 'isParticipant:', isParticipant, 'isSharedAndIncluded:', isSharedAndIncluded);
           
           if (isUserEvent || isParticipant || isSharedAndIncluded) {
             events.push(event);
@@ -151,7 +142,6 @@ export class EventService {
         }
       });
 
-      console.log('Eventos após filtros:', events);
       return events;
     } catch (error) {
       console.error('Erro ao consultar eventos:', error);
@@ -161,15 +151,12 @@ export class EventService {
 
   private async loadEvents(): Promise<void> {
     if (this.isLoading) {
-      console.log('EventService: Já está carregando eventos, ignorando...');
       return;
     }
     
     this.isLoading = true;
     
     try {
-      console.log('EventService: Iniciando carregamento de eventos...');
-      
       // Query simples para buscar todos os eventos
       const querySnapshot = await getDocs(this.eventsCollection);
       
@@ -178,15 +165,10 @@ export class EventService {
       
       querySnapshot.forEach(doc => {
         if (!seenIds.has(doc.id)) {
-          console.log('EventService: Documento encontrado:', doc.id, doc.data());
           baseEvents.push(this.mapDocToEvent(doc.id, doc.data()));
           seenIds.add(doc.id);
-        } else {
-          console.log('EventService: Documento duplicado ignorado:', doc.id);
         }
       });
-      
-      console.log('EventService: Total de eventos base encontrados:', baseEvents.length);
       
       // Gerar eventos recorrentes para os próximos 6 meses
       const endDate = new Date();
@@ -199,14 +181,12 @@ export class EventService {
           // Gerar eventos recorrentes
           const recurringEvents = this.generateRecurringEvents(baseEvent, endDate);
           allEvents.push(...recurringEvents);
-          console.log(`EventService: Gerados ${recurringEvents.length} eventos recorrentes para "${baseEvent.name}"`);
         } else {
           // Evento único
           allEvents.push(baseEvent);
         }
       });
       
-      console.log('EventService: Total de eventos (incluindo recorrentes):', allEvents.length);
       this.eventsSubject.next(allEvents);
     } catch (error) {
       console.error('EventService: Erro ao carregar eventos:', error);
@@ -321,7 +301,6 @@ export class EventService {
       }
     }
 
-    console.log(`Gerados ${events.length} eventos para "${baseEvent.name}" (${baseEvent.recurrence})`);
     return events;
   }
 }

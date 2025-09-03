@@ -130,9 +130,10 @@ import { UserService } from '../../../core/services/user.service';
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       padding: 16px;
+      overflow: auto;
     }
 
     .register-card {

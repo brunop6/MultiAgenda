@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, AfterViewInit, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, AfterViewInit, ViewChild, ElementRef, HostListener, Output, EventEmitter, Input, ContentChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,9 +7,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-
+import { MatMenuModule } from '@angular/material/menu';
+import { Subject, Observable } from 'rxjs';
+import { takeUntil, map } from 'rxjs/operators';
 import { CalendarService, CalendarDay, CalendarMonth, CalendarView } from '../../core/services/calendar.service';
 import { EventService } from '../../core/services/event.service';
 import { TestEventService } from '../../core/services/test-event.service';
@@ -28,6 +28,7 @@ interface EventPosition {
   width: number;
 }
 
+
 @Component({
   selector: 'app-calendar',
   standalone: true,
@@ -39,51 +40,75 @@ interface EventPosition {
     MatToolbarModule,
     MatSelectModule,
     MatCheckboxModule,
-    MatDialogModule
+    MatDialogModule,
+    MatMenuModule
   ],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss']
 })
 export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ContentChild('userFilters') userFilters!: TemplateRef<any>;
+  @Input() externalUsers: User[] = [];
+  @Input() externalSelectedUserIds: string[] = [];
+  @Input() externalToggleUser?: (userId: string, checked: boolean) => void;
+  @Output() usersChange = new EventEmitter<User[]>();
+  @Output() selectedUserIdsChange = new EventEmitter<string[]>();
   private destroy$ = new Subject<void>();
-  
+
   @ViewChild('weekContent', { static: false }) weekContentRef!: ElementRef;
-  
+
   currentMonth: CalendarMonth | null = null;
   currentView: CalendarView = CalendarView.WEEK;
   selectedDate: Date = new Date();
-  
+
   // Propriedades de zoom
   zoomLevel: number = 1; // Nível de zoom padrão
   minZoom: number = 0.5; // Zoom mínimo (50%)
   maxZoom: number = 3; // Zoom máximo (300%)
   zoomStep: number = 0.25; // Incremento do zoom
-  
+
   users: User[] = [];
   selectedUserIds: string[] = [];
   events: CalendarEvent[] = [];
-  
+
   dayHeaders = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
   timeSlots = Array.from({ length: 24 }, (_, i) => i);
   weekDays: CalendarDay[] = [];
 
+
   // Services
   private calendarService = inject(CalendarService);
   private eventService = inject(EventService);
-  private testEventService = inject(TestEventService);
   private userService = inject(UserService);
   private authService = inject(AuthService);
   private dialog = inject(MatDialog);
 
+  currentUser$ = this.authService.currentUser$;
+
+  signOut() {
+    this.authService.signOut();
+  }
+
+  constructor() {
+
+  }
+
   ngOnInit() {
-    console.log('Calendar: Component initialized');
-    
-    // Verificar estado da autenticação
-    this.authService.user$.subscribe(user => {
-      console.log('Calendar: User state:', user);
-    });
-    
-    this.loadUsers();
+    // Só carrega usuários quando autenticado
+    this.currentUser$
+      .pipe(takeUntil(this.destroy$))
+
+      .subscribe(user => {
+        if (user) {
+          this.loadUsers();
+          this.eventService.reloadEvents();
+        } else {
+          this.users = [];
+          this.selectedUserIds = [];
+          this.events = [];
+        }
+      });
+
     this.loadEvents();
     this.updateCalendar();
   }
@@ -93,7 +118,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.weekContentRef?.nativeElement) {
       this.weekContentRef.nativeElement.removeEventListener('wheel', this.handleWheelZoom.bind(this));
     }
-    
+
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -103,7 +128,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     setTimeout(() => {
       this.scrollToMorningTime();
     }, 100);
-    
+
     // Adicionar event listener para zoom com wheel
     if (this.weekContentRef?.nativeElement) {
       this.weekContentRef.nativeElement.addEventListener('wheel', this.handleWheelZoom.bind(this), { passive: false });
@@ -125,25 +150,24 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
       .subscribe((users: User[]) => {
         this.users = users;
         this.selectedUserIds = users.map((u: User) => u.id);
+        this.usersChange.emit(this.users);
+        this.selectedUserIdsChange.emit(this.selectedUserIds);
       });
   }
 
   private loadEvents() {
-    console.log('Calendar: Iniciando subscription dos eventos...');
     this.eventService.events$
       .pipe(takeUntil(this.destroy$))
       .subscribe((events: Event[]) => {
-        console.log('Calendar: Eventos recebidos:', events.length, events);
         // Converter Event[] para CalendarEvent[] usando o método do service
         this.events = events.map(event => this.eventService.toCalendarEvent(event));
-        console.log('Calendar: Eventos convertidos:', this.events.length, this.events);
       });
   }
 
   // Navegação do calendário
   navigateToPrevious() {
     const currentDate = this.getCurrentDate();
-    
+
     switch (this.currentView) {
       case CalendarView.MONTH:
         this.calendarService.setCurrentDate(this.calendarService.addMonths(currentDate, -1));
@@ -157,7 +181,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   navigateToNext() {
     const currentDate = this.getCurrentDate();
-    
+
     switch (this.currentView) {
       case CalendarView.MONTH:
         this.calendarService.setCurrentDate(this.calendarService.addMonths(currentDate, 1));
@@ -181,18 +205,10 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private updateCalendar() {
-    console.log('Calendar: Updating calendar for date:', this.getCurrentDate());
-    this.currentMonth = this.calendarService.generateCalendarMonth(this.getCurrentDate());
-    console.log('Calendar: Generated month:', this.currentMonth);
-    
     // Sempre gerar os dias da semana para a visualização semanal
     this.weekDays = this.calendarService.generateCalendarWeek(this.getCurrentDate());
-    console.log('Calendar: Generated week days:', this.weekDays);
-    
-    // Aplicar scroll automático após a atualização da view
-    setTimeout(() => {
-      this.scrollToMorningTime();
-    }, 50);
+
+    this.currentMonth = this.calendarService.generateCalendarMonth(this.getCurrentDate());
   }
 
   private getCurrentDate(): Date {
@@ -208,7 +224,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     if (event) {
       event.stopPropagation();
     }
-    
+
     const modalData: EventModalData = {
       date: date,
       mode: 'create'
@@ -229,6 +245,10 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Filtragem de usuários
   toggleUser(userId: string, checked: boolean) {
+    if (this.externalToggleUser) {
+      this.externalToggleUser(userId, checked);
+      return;
+    }
     if (checked) {
       if (!this.selectedUserIds.includes(userId)) {
         this.selectedUserIds.push(userId);
@@ -236,6 +256,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     } else {
       this.selectedUserIds = this.selectedUserIds.filter(id => id !== userId);
     }
+    this.selectedUserIdsChange.emit(this.selectedUserIds);
   }
 
   // Obtenção de eventos
@@ -247,7 +268,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
       const matchesUser = this.selectedUserIds.includes(event.userId);
       return matchesDate && matchesUser;
     });
-    
+
     // Remove eventos duplicados
     return this.removeDuplicateEvents(filteredEvents);
   }
@@ -273,7 +294,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
     overlappingGroups.forEach(group => {
       const groupWidth = 100 / group.length; // Largura em porcentagem para cada evento no grupo
-      
+
       group.forEach((event, index) => {
         // Calcular posição vertical baseada no horário de início com zoom
         const eventStartHour = event.startTime.getHours();
@@ -319,7 +340,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
     overlappingGroups.forEach(group => {
       const groupWidth = 100 / group.length; // Largura em porcentagem para cada evento no grupo
-      
+
       group.forEach((event, index) => {
         // Calcular posição e tamanho baseado no horário
         const eventStartMinutes = event.startTime.getHours() * 60 + event.startTime.getMinutes();
@@ -371,7 +392,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     if (events.length === 0) return [];
 
     // Ordenar eventos por horário de início
-    const sortedEvents = [...events].sort((a, b) => 
+    const sortedEvents = [...events].sort((a, b) =>
       a.startTime.getTime() - b.startTime.getTime()
     );
 
@@ -385,13 +406,13 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
       // Encontrar o grupo ao qual este evento pertence
       let addedToGroup = false;
-      
+
       for (const group of groups) {
         // Verificar se este evento se sobrepõe com algum evento do grupo
         const hasOverlap = group.some(groupEvent => {
           const groupEventStartMinutes = groupEvent.startTime.getHours() * 60 + groupEvent.startTime.getMinutes();
           const groupEventEndMinutes = groupEvent.endTime.getHours() * 60 + groupEvent.endTime.getMinutes();
-          
+
           return !(eventEndMinutes <= groupEventStartMinutes || eventStartMinutes >= groupEventEndMinutes);
         });
 
@@ -416,7 +437,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     if (events.length === 0) return [];
 
     // Ordenar eventos por horário de início
-    const sortedEvents = [...events].sort((a, b) => 
+    const sortedEvents = [...events].sort((a, b) =>
       a.startTime.getTime() - b.startTime.getTime()
     );
 
@@ -428,13 +449,13 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
       // Encontrar o grupo ao qual este evento pertence
       let addedToGroup = false;
-      
+
       for (const group of groups) {
         // Verificar se este evento se sobrepõe com algum evento do grupo
         const hasOverlap = group.some(groupEvent => {
           const groupEventStartMinutes = groupEvent.startTime.getHours() * 60 + groupEvent.startTime.getMinutes();
           const groupEventEndMinutes = groupEvent.endTime.getHours() * 60 + groupEvent.endTime.getMinutes();
-          
+
           return !(eventEndMinutes <= groupEventStartMinutes || eventStartMinutes >= groupEventEndMinutes);
         });
 
@@ -505,7 +526,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   openEventDetail(event: CalendarEvent, mouseEvent: MouseEvent) {
     mouseEvent.stopPropagation();
-    
+
     const modalData: EventModalData = {
       event: event,
       mode: 'view'
@@ -581,21 +602,21 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
   // Método para controlar zoom com wheel do mouse
   handleWheelZoom(event: WheelEvent) {
     if (this.currentView !== CalendarView.WEEK) return;
-    
+
     // Verificar se Ctrl está pressionado para zoom
     if (event.ctrlKey) {
       event.preventDefault();
-      
+
       const scrollPosition = this.weekContentRef.nativeElement.scrollTop;
       const containerHeight = this.weekContentRef.nativeElement.clientHeight;
       const scrollPercent = scrollPosition / (this.weekContentRef.nativeElement.scrollHeight - containerHeight);
-      
+
       if (event.deltaY < 0) {
         this.zoomIn();
       } else {
         this.zoomOut();
       }
-      
+
       // Manter posição de scroll relativa após o zoom
       setTimeout(() => {
         const newScrollHeight = this.weekContentRef.nativeElement.scrollHeight - containerHeight;
@@ -608,35 +629,23 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
   @HostListener('window:keydown', ['$event'])
   handleKeyboardShortcuts(event: KeyboardEvent) {
     if (this.currentView !== CalendarView.WEEK) return;
-    
+
     // Ctrl + Plus/Equals para zoom in
     if (event.ctrlKey && (event.key === '+' || event.key === '=')) {
       event.preventDefault();
       this.zoomIn();
     }
-    
+
     // Ctrl + Minus para zoom out
     if (event.ctrlKey && event.key === '-') {
       event.preventDefault();
       this.zoomOut();
     }
-    
+
     // Ctrl + 0 para reset zoom
     if (event.ctrlKey && event.key === '0') {
       event.preventDefault();
       this.resetZoom();
-    }
-  }
-
-  // Método para teste - criar evento de exemplo
-  async createTestEvent() {
-    try {
-      await this.testEventService.createTestEvent();
-      console.log('Evento de teste criado com sucesso');
-      // Recarregar eventos
-      await this.eventService.reloadEvents();
-    } catch (error) {
-      console.error('Erro ao criar evento de teste:', error);
     }
   }
 }

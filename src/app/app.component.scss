@@ -1,0 +1,66 @@
+.user-filters-toolbar {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  height: 60px;
+  min-width: 0;
+  max-width: 100vw;
+  margin: 0;
+}
+
+.user-filters-toolbar .user-checkboxes {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+}
+
+.user-filters-toolbar .mat-checkbox {
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 2px !important;
+  min-width: 0;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.user-filters-toolbar .user-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #fff;
+  font-weight: 500;
+  padding: 0;
+}
+
+.user-filters-toolbar .user-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+// Ajuste para checkbox label
+.user-filters-toolbar ::ng-deep .mat-checkbox-label {
+  color: #fff !important;
+  padding: 0 2px;
+}
+
+// Ajuste para checkbox marcado
+.user-filters-toolbar ::ng-deep .mat-checkbox-checked .mat-checkbox-background {
+  background-color: #fff !important;
+  border-color: #fff !important;
+}
+
+// Ajuste para o checkmark
+.user-filters-toolbar ::ng-deep .mat-checkbox-checkmark-path {
+  stroke: #667eea !important;
+}

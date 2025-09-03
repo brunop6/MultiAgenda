@@ -1,822 +1,902 @@
+@media (max-width: 768px) {
+  .week-view {
+    height: 70vh !important;
+    .week-events-overlay {
+      .calendar-event {
+        position: absolute !important;
+        left: unset;
+        width: unset;
+        // Os estilos de left e width já são aplicados inline pelo Angular
+        min-width: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+    }
+  }
+}
+// Checkbox colorido por usuário
+::ng-deep mat-checkbox[data-user-color] .mat-checkbox-checked .mat-checkbox-background,
+::ng-deep mat-checkbox[data-user-color] .mat-checkbox-indeterminate .mat-checkbox-background {
+  background-color: attr(data-user-color color, #2196f3) !important;
+  border-color: attr(data-user-color color, #2196f3) !important;
+}
+
+// Fallback para navegadores que não suportam attr() em CSS (Safari, etc)
+@each $color in ('#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722') {
+  ::ng-deep mat-checkbox[data-user-color='#{$color}'] .mat-checkbox-checked .mat-checkbox-background,
+  ::ng-deep mat-checkbox[data-user-color='#{$color}'] .mat-checkbox-indeterminate .mat-checkbox-background {
+    background-color: #{$color} !important;
+    border-color: #{$color} !important;
+  }
+}
 // Calendar Container
 .calendar-container {
-  padding: 8px 16px; // Aumentado padding para melhor visualização
+  height: 100vh;
   max-width: 100%;
   background: #f8f9fa;
-  height: calc(100vh - 80px); // Ajustado para dar mais altura
-  overflow-y: auto; // Permitir rolagem vertical para acessar filtros
-  overflow-x: hidden; // Evitar rolagem horizontal
-}
+  padding: 8px 16px;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  will-change: scroll-position;
 
-// Toolbar
-.calendar-toolbar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: none; // Removido para integração com card
-  padding: 0 24px !important;
-  height: 60px; // Reduzido de 72px para 60px
-  border-radius: 12px;
-  margin-bottom: 6px;
-  
-  .toolbar-left, .toolbar-right {
+  // Calendar Card Container
+  .calendar-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 16px;
     display: flex;
-    align-items: center;
-    color: white; // Garantir que todos os elementos sejam brancos
-    
-    * {
-      color: white !important; // Forçar cor branca em todos os elementos filhos
+    flex-direction: column;
+  
+    .calendar-toolbar {
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      flex-shrink: 0;
+    }
+  
+    // Ajustar views para altura adequada
+    .month-view,
+    .week-view {
+      border-radius: 12px;
+      height: 85vh;
+      overflow: auto;
+      scroll-behavior: smooth;
+      will-change: scroll-position;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
   }
-  
-  .toolbar-right {
-    min-width: 130px; // Garantir espaço para botão + select
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  
-  // Controles de Zoom
-  .zoom-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 4px 8px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    
-    .zoom-level {
-      color: white;
-      font-size: 12px;
-      font-weight: 600;
-      min-width: 45px;
-      text-align: center;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    }
-    
-    .mat-icon-button {
-      width: 32px;
-      height: 32px;
-      line-height: 32px;
-      transition: all 0.2s ease;
-      
-      .mat-icon {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-      }
-      
-      &:hover:not([disabled]) {
-        background: rgba(255, 255, 255, 0.2);
-        transform: scale(1.1);
-      }
-      
-      &[disabled] {
-        opacity: 0.4;
-        cursor: not-allowed;
-        
-        &:hover {
-          transform: none;
-        }
-      }
-    }
-  }
-  
-  .toolbar-center {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    
-    h2 {
-      margin: 0;
-      font-size: 20px; // Reduzido de 24px
-      font-weight: 600;
-      color: white;
-      letter-spacing: -0.5px;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-  }
-  
-  .mat-button {
-    border-radius: 8px;
-    font-weight: 500;
-    color: white !important; // Forçar cor branca
-    
-    &:hover {
-      background: rgba(255,255,255,0.1);
-    }
-    
-    // Garantir que o texto dentro do botão seja branco
-    span, .mat-button-wrapper {
-      color: white !important;
-    }
-  }
-  
-  .mat-icon-button {
-    border-radius: 50%;
-    color: white !important; // Forçar cor branca
-    
-    &:hover {
-      background: rgba(255,255,255,0.1);
-    }
-    
-    .mat-icon {
-      font-size: 24px;
-      width: 24px;
-      height: 24px;
-      color: white !important; // Forçar cor branca nos ícones
-    }
-  }
-  
-  // Estilo especial para mat-select
-  ::ng-deep .mat-select {
+
+  // Toolbar
+  .calendar-toolbar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    min-width: 120px;
-    
-    .mat-select-value {
-      color: white;
-      white-space: nowrap;
-      overflow: visible;
-      text-overflow: unset;
-    }
-    
-    .mat-select-arrow {
-      color: white;
-    }
-    
-    // Garantir que o trigger tenha largura suficiente
-    .mat-select-trigger {
-      min-width: 120px;
-      overflow: visible;
-    }
-  }
-}
-
-// User Filters
-.user-filters {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: none; // Removido para integração com card
+    padding: 0 24px !important;
+    height: fit-content; // Reduzido de 72px para 60px
+    border-radius: 12px;
+    margin-bottom: 6px;
   
-  .mat-card-content {
-    padding: 20px !important;
-  }
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      color: white; // Garantir que todos os elementos sejam brancos
   
-  h3 {
-    margin: 0 0 16px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
-  }
-  
-  .user-checkboxes {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    
-    .mat-checkbox {
-      margin-right: 0 !important;
-      
-      ::ng-deep .mat-checkbox-label {
-        color: #333;
-      }
-      
-      ::ng-deep .mat-checkbox-frame {
-        border-color: rgba(0, 0, 0, 0.54);
-      }
-      
-      ::ng-deep .mat-checkbox-checkmark-path {
-        stroke: white !important;
-      }
-      
-      ::ng-deep .mat-checkbox-checked .mat-checkbox-background {
-        background-color: #667eea;
+      * {
+        color: white !important; // Forçar cor branca em todos os elementos filhos
       }
     }
-    
-    .user-option {
+  
+    .toolbar-right {
+      min-width: 130px; // Garantir espaço para botão + select
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: nowrap;
+      flex-direction: row;
+    }
+  
+    // Controles de Zoom
+    .zoom-controls {
       display: flex;
       align-items: center;
       gap: 8px;
-      
-      .user-color {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        border: 2px solid rgba(0, 0, 0, 0.2);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-      }
-    }
-  }
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 4px 8px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
   
-  // Estatísticas de eventos
-  p {
-    margin: 16px 0 0 0;
-    
-    small {
-      color: #666;
-      font-size: 12px;
-    }
-  }
-}
-
-// Calendar Card Container
-.calendar-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  overflow: hidden;
-  margin-bottom: 16px; // Espaço para o filtro de usuários
-  display: flex;
-  flex-direction: column;
-
-  .mat-card-content {
-    padding: 0 !important;
-    flex: 1;
-    overflow: hidden;
-  }
-  
-  // Quando o toolbar está dentro do card
-  .calendar-toolbar {
-    border-radius: 0; // Removido border-radius
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    flex-shrink: 0; // Evitar que o toolbar encolha
-  }
-  
-  // Ajustar views para altura adequada
-  .month-view,
-  .week-view {
-    border-radius: 12px;
-    height: 70vh; // Altura fixa para a view do calendário
-    overflow: auto; // Permitir rolagem interna apenas na view
-  }
-}
-
-// Month View
-.month-view {
-  .calendar-grid {
-    width: 100%;
-    background: white;
-    
-    .calendar-header {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      
-      .day-header {
-        padding: 12px 6px; // Reduzido de 16px 8px para 12px 6px
-        text-align: center;
-        font-weight: 600;
-        font-size: 12px; // Reduzido de 13px para 12px
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        border-right: 1px solid rgba(255, 255, 255, 0.2);
+      .zoom-level {
         color: white;
-        
-        &:last-child {
-          border-right: none;
-        }
+        font-size: 12px;
+        font-weight: 600;
+        min-width: 45px;
+        text-align: center;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
       }
-    }
-    
-    .calendar-body {
-      .calendar-week {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        border-bottom: 1px solid #e9ecef;
-        
-        &:last-child {
-          border-bottom: none;
+  
+      .mat-icon-button {
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        transition: all 0.2s ease;
+  
+        .mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
         }
-        
-        .calendar-day {
-          min-height: 90px; // Reduzido de 120px para 90px (75% da escala original)
-          border-right: 1px solid #e9ecef;
-          padding: 8px; // Reduzido de 10px para 8px
-          cursor: pointer;
-          transition: all 0.3s ease;
-          position: relative;
-          background: white;
-          border-bottom: 1px solid #e9ecef;
-          
-          &:last-child {
-            border-right: none;
-          }
-          
+  
+        &:hover:not([disabled]) {
+          background: rgba(255, 255, 255, 0.2);
+          transform: scale(1.1);
+        }
+  
+        &[disabled] {
+          opacity: 0.4;
+          cursor: not-allowed;
+  
           &:hover {
-            background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
-            transform: translateY(-1px);
-            box-shadow: inset 0 0 0 2px rgba(102, 126, 234, 0.2);
-          }
-          
-          &.other-month {
-            background: #f8f9fa;
-            color: #adb5bd;
-            
-            &:hover {
-              background: #f1f3f4;
-            }
-          }
-          
-          &.today {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            
-            .day-number {
-              color: white;
-              font-weight: 700;
-              background: #1976d2;
-              border-radius: 50%;
-              width: 32px;
-              height: 32px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            }
-          }
-          
-          &.selected {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            
-            .day-number {
-              color: white;
-            }
-          }
-          
-          .day-number {
-            font-weight: 600;
-            margin-bottom: 6px; // Reduzido de 8px para 6px
-            font-size: 14px; // Reduzido de 16px para 14px
-            color: #333;
-          }
-          
-          .day-events {
-            display: flex;
-            flex-direction: column;
-            gap: 3px; // Reduzido de 4px para 3px
-            
-            .event-item {
-              padding: 4px 8px; // Reduzido de 6px 10px para 4px 8px
-              border-radius: 6px; // Reduzido de 8px para 6px
-              font-size: 10px; // Reduzido de 11px para 10px
-              color: white;
-              cursor: pointer;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-              transition: all 0.2s ease;
-              position: relative;
-              
-              &:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-              }
-              
-              // Círculo indicador do usuário
-              .user-indicator {
-                position: absolute;
-                top: 3px; // Reduzido de 4px para 3px
-                right: 3px; // Reduzido de 4px para 3px
-                width: 10px; // Reduzido de 12px para 10px
-                height: 10px; // Reduzido de 12px para 10px
-                border-radius: 50%;
-                border: 1px solid white; // Reduzido de 2px para 1px
-                box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-                z-index: 2;
-              }
-              
-              .event-time {
-                font-size: 8px; // Reduzido de 9px para 8px
-                font-weight: 700;
-                margin-bottom: 1px; // Reduzido de 2px para 1px
-                opacity: 0.9;
-              }
-              
-              .event-name {
-                font-size: 10px; // Reduzido de 11px para 10px
-                font-weight: 600;
-                margin-bottom: 2px;
-              }
-              
-              .event-location {
-                font-size: 9px;
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                opacity: 0.8;
-                
-                .location-icon {
-                  font-size: 10px;
-                  width: 10px;
-                  height: 10px;
-                }
-              }
-            }
-          }
-          
-          .add-event-btn {
-            position: absolute;
-            top: 6px; // Reduzido de 8px para 6px
-            right: 6px; // Reduzido de 8px para 6px
-            opacity: 0;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            width: 24px; // Reduzido de 28px para 24px
-            height: 24px; // Reduzido de 28px para 24px
-            min-width: 24px; // Reduzido de 28px para 24px
-            border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            
-            &:hover {
-              background: rgba(255, 255, 255, 1);
-              transform: scale(1.1);
-            }
-            
-            .mat-icon {
-              font-size: 16px; // Reduzido de 18px para 16px
-              width: 16px; // Reduzido de 18px para 16px
-              height: 16px; // Reduzido de 18px para 16px
-              line-height: 16px; // Reduzido de 18px para 16px
-              color: #667eea;
-            }
-          }
-          
-          &:hover .add-event-btn {
-            opacity: 1;
+            transform: none;
           }
         }
       }
     }
-  }
-}
-
-// Week View
-.week-view {
-  display: flex;
-  flex-direction: column;
-  height: 100%; // Usar altura do container pai
-  background: white;
-  overflow: hidden;
   
-  .week-header {
-    display: grid;
-    grid-template-columns: 120px repeat(7, 1fr);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    flex-shrink: 0; // Evitar que o cabeçalho encolha
-    
-    .time-column-header {
-      padding: 12px 9px; // Reduzido de 16px 12px para 12px 9px
-      text-align: center;
-      font-weight: 600;
-      font-size: 11px; // Reduzido de 12px para 11px
-      background: rgba(0,0,0,0.1);
-      border-right: 2px solid rgba(255, 255, 255, 0.3);
-      color: white;
-    }
-    
-    .day-header {
-      padding: 12px 9px; // Reduzido de 16px 12px para 12px 9px
-      text-align: center;
-      border-right: 1px solid rgba(255, 255, 255, 0.2);
-      transition: background-color 0.3s ease;
-      
-      &:last-child {
-        border-right: none;
-      }
-      
-      &.today {
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        
-        .day-name, .day-number {
-          color: white;
-          font-weight: 700;
-          text-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-      }
-      
-      .day-name {
-        font-size: 10px; // Reduzido de 11px para 10px
-        margin-bottom: 3px; // Reduzido de 4px para 3px
-        font-weight: 500;
-        opacity: 0.9;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: white;
-      }
-      
-      .day-number {
-        font-size: 16px; // Reduzido de 18px para 16px
-        font-weight: 600;
-        color: white;
-      }
-    }
-  }
+    .toolbar-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      cursor: pointer;
   
-  .week-content {
-    flex: 1;
-    overflow-y: auto;
-    position: relative;
-    display: grid;
-    grid-template-columns: 120px repeat(7, 1fr);
-    background: white;
-    
-    // Overlay para eventos posicionados absolutamente
-    .week-events-overlay {
-      position: absolute;
-      top: 0;
-      left: 120px; // Offset para a coluna de tempo
-      right: 0;
-      height: 100%;
-      z-index: 15;
-      pointer-events: none; // Permitir clique através do overlay
-      
-      .day-events-column {
-        position: absolute;
-        top: 0;
-        pointer-events: auto; // Reabilitar eventos nos elementos filhos
-        
-        .calendar-event {
-          position: absolute;
-          z-index: 16;
-        }
-      }
-    }
-    
-    .time-slot {
-      border-bottom: 2px solid #e9ecef;
-      // height: 60px; // Removido - agora controlado pelo zoom
-      position: relative;
-      
-      &.time-column {
-        background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f4 100%);
-        border-right: 2px solid #e9ecef;
-        display: flex;
-        align-items: flex-start;
-        padding: 0;
-        font-size: 10px; // Reduzido de 11px para 10px
-        color: #6c757d;
-        font-weight: 600;
-        position: sticky;
-        left: 0;
-        z-index: 10;
-        text-align: center;
-        justify-content: center;
-        
-        // Destaque para horário comercial (9h-17h)
-        &:nth-child(8n+19):nth-child(-n+35) {
-          background: linear-gradient(135deg, #fff3e0 0%, #ffeaa7 100%);
-          color: #d68910;
-          font-weight: 700;
-        }
-        
-        &:hover {
-          background: linear-gradient(135deg, #f1f3f4 0%, #e9ecef 100%);
-        }
-      }
-      
-      &.day-column {
-        position: relative;
-        background: white;
-        transition: background-color 0.2s ease;
-        cursor: pointer;
-        border-right: 1px solid #e9ecef;
-        
-        &:hover {
-          background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
-          box-shadow: inset 2px 0 0 rgba(102, 126, 234, 0.2);
-        }
-        
-        &:active {
-          background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-        }
-      }
-    }
-  }
-}
-
-// Event Positioning
-.calendar-event {
-  position: absolute;
-  // Remover background padrão para usar a cor do evento do banco
-  color: black;
-  border-radius: 9px; // Reduzido de 12px para 9px
-  padding: 8px 10px; // Reduzido de 10px 14px para 8px 10px
-  font-size: 11px; // Reduzido de 13px para 11px
-  cursor: pointer;
-  overflow: hidden;
-  z-index: 15;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  
-  &:hover {
-    transform: translateY(-3px) scale(1.02);
-    z-index: 25;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
-    // Remover mudança de cor no hover para manter a cor original
-  }
-  
-  &:active {
-    transform: translateY(-1px) scale(1.01);
-    transition: all 0.1s ease;
-  }
-  
-  // Círculo indicador do usuário
-  .user-indicator {
-    position: absolute;
-    top: 5px; // Reduzido de 6px para 5px
-    right: 5px; // Reduzido de 6px para 5px
-    width: 11px; // Reduzido de 14px para 11px
-    height: 11px; // Reduzido de 14px para 11px
-    border-radius: 50%;
-    border: 1px solid white; // Reduzido de 2px para 1px
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    z-index: 2;
-  }
-  
-  .event-title {
-    font-weight: 600;
-    margin-bottom: 4px; // Reduzido de 6px para 4px
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    font-size: 12px; // Reduzido de 14px para 12px
-  }
-  
-  .event-time {
-    font-size: 9px; // Reduzido de 11px para 9px
-    opacity: 0.9;
-    margin-bottom: 3px; // Reduzido de 4px para 3px
-    font-weight: 500;
-    background: rgba(255, 255, 255, 0.15);
-    padding: 1px 4px; // Reduzido de 2px 6px para 1px 4px
-    border-radius: 4px; // Reduzido de 6px para 4px
-    display: inline-block;
-  }
-  
-  .event-location {
-    font-size: 9px; // Reduzido de 11px para 9px
-    opacity: 0.85;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: flex;
-    align-items: center;
-    gap: 3px; // Reduzido de 4px para 3px
-    margin-top: 3px; // Reduzido de 4px para 3px
-    
-    .mat-icon {
-      font-size: 10px; // Reduzido de 12px para 10px
-      width: 10px; // Reduzido de 12px para 10px
-      height: 10px; // Reduzido de 12px para 10px
-      opacity: 0.7;
-    }
-  }
-  
-  // Variações de cor para diferentes tipos de evento
-  &.high-priority {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-    
-    &:hover {
-      background: linear-gradient(135deg, #ff5252 0%, #d63031 100%);
-    }
-  }
-  
-  &.meeting {
-    background: linear-gradient(135deg, #4834d4 0%, #341f97 100%);
-    
-    &:hover {
-      background: linear-gradient(135deg, #3742fa 0%, #2f3542 100%);
-    }
-  }
-  
-  &.personal {
-    background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);
-    
-    &:hover {
-      background: linear-gradient(135deg, #00d2d3 0%, #01a3a4 100%);
-    }
-  }
-}
-
-
-// Loading State
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-}
-
-// Responsive Design
-@media (max-width: 768px) {
-  .calendar-container {
-    padding: 8px;
-  }
-  
-  .calendar-toolbar {
-    .toolbar-right {
-      gap: 8px;
-      
-      .zoom-controls {
-        padding: 2px 4px;
-        gap: 4px;
-        
-        .zoom-level {
-          font-size: 10px;
-          min-width: 35px;
-        }
-        
-        .mat-icon-button {
-          width: 28px;
-          height: 28px;
-          line-height: 28px;
-          
-          .mat-icon {
-            font-size: 16px;
-            width: 16px;
-            height: 16px;
-          }
-        }
-      }
-    }
-  }
-  
-  .calendar-header {
-    flex-direction: column;
-    gap: 12px;
-    
-    .date-navigation {
-      flex-direction: column;
-      gap: 8px;
-      
       h2 {
-        min-width: auto;
+        margin: 0;
+        font-size: 20px; // Reduzido de 24px
+        font-weight: 600;
+        color: white;
+        letter-spacing: -0.5px;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+    }
+  
+    .mat-button {
+      border-radius: 8px;
+      font-weight: 500;
+      color: white !important; // Forçar cor branca
+  
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+  
+      // Garantir que o texto dentro do botão seja branco
+      span,
+      .mat-button-wrapper {
+        color: white !important;
+      }
+    }
+  
+    .mat-icon-button {
+      border-radius: 50%;
+      color: white !important; // Forçar cor branca
+  
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+  
+      .mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        color: white !important; // Forçar cor branca nos ícones
+      }
+    }
+  
+    // Estilo especial para mat-select
+    ::ng-deep .mat-select {
+      color: white;
+      min-width: 120px;
+  
+      .mat-select-value {
+        color: white;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: unset;
+      }
+  
+      .mat-select-arrow {
+        color: white;
+      }
+  
+      // Garantir que o trigger tenha largura suficiente
+      .mat-select-trigger {
+        min-width: 120px;
+        overflow: visible;
       }
     }
   }
   
+  // User Filters
   .user-filters {
-    .user-list {
-      .user-filter {
-        padding: 4px 8px;
+    position: absolute;
+    top: 60px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+  
+    .mat-card-content {
+      padding: 20px !important;
+    }
+  
+    h3 {
+      margin: 0 0 16px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+  
+    .user-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+  
+      .mat-checkbox {
+        margin-right: 0 !important;
+  
+        ::ng-deep .mat-checkbox-label {
+          color: #333;
+        }
+  
+        ::ng-deep .mat-checkbox-frame {
+          border-color: rgba(0, 0, 0, 0.54);
+        }
+  
+        ::ng-deep .mat-checkbox-checkmark-path {
+          stroke: white !important;
+        }
+  
+        ::ng-deep .mat-checkbox-checked .mat-checkbox-background {
+          background-color: #667eea;
+        }
+      }
+  
+      .user-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #fff;
+
+        .user-color {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          border: 2px solid rgba(0, 0, 0, 0.2);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+      }
+    }
+  
+    // Estatísticas de eventos
+    p {
+      margin: 16px 0 0 0;
+  
+      small {
+        color: #666;
         font-size: 12px;
       }
     }
   }
   
+  // Month View
   .month-view {
     .calendar-grid {
-      .calendar-day {
-        min-height: 80px;
-        padding: 4px;
-        
-        .day-events {
-          .event-item {
-            font-size: 10px;
+      width: 100%;
+      background: white;
+  
+      .calendar-header {
+        display: grid;
+        grid-template-columns: 50px repeat(7, 1fr);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+  
+        .day-header {
+          padding: 12px 6px; // Reduzido de 16px 8px para 12px 6px
+          text-align: center;
+          font-weight: 600;
+          font-size: 12px; // Reduzido de 13px para 12px
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          border-right: 1px solid rgba(255, 255, 255, 0.2);
+          color: white;
+  
+          &:last-child {
+            border-right: none;
+          }
+        }
+      }
+  
+      .calendar-body {
+        .calendar-week {
+          display: grid;
+          grid-template-columns: 50px repeat(7, 1fr);
+          border-bottom: 1px solid #e9ecef;
+
+
+  
+          &:last-child {
+            border-bottom: none;
+          }
+  
+          .calendar-day {
+            min-height: 90px; // Reduzido de 120px para 90px (75% da escala original)
+            border-right: 1px solid #e9ecef;
+            padding: 8px; // Reduzido de 10px para 8px
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+  
+            &:last-child {
+              border-right: none;
+            }
+  
+            &:hover {
+              background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+              transform: translateY(-1px);
+              box-shadow: inset 0 0 0 2px rgba(102, 126, 234, 0.2);
+            }
+  
+            &.other-month {
+              background: #f8f9fa;
+              color: #adb5bd;
+  
+              &:hover {
+                background: #f1f3f4;
+              }
+            }
+  
+            &.today {
+              background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  
+              .day-number {
+                color: white;
+                font-weight: 700;
+                background: #1976d2;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+            }
+  
+            &.selected {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+  
+              .day-number {
+                color: white;
+              }
+            }
+  
+            .day-number {
+              font-weight: 600;
+              margin-bottom: 6px; // Reduzido de 8px para 6px
+              font-size: 14px; // Reduzido de 16px para 14px
+              color: #333;
+            }
+  
+            .day-events {
+              display: flex;
+              flex-direction: column;
+              gap: 3px; // Reduzido de 4px para 3px
+  
+              .event-item {
+                padding: 4px 8px; // Reduzido de 6px 10px para 4px 8px
+                border-radius: 6px; // Reduzido de 8px para 6px
+                font-size: 10px; // Reduzido de 11px para 10px
+                color: white;
+                cursor: pointer;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+                transition: all 0.2s ease;
+                position: relative;
+  
+                &:hover {
+                  transform: translateY(-2px);
+                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+                }
+  
+                // Círculo indicador do usuário
+                .user-indicator {
+                  position: absolute;
+                  top: 3px; // Reduzido de 4px para 3px
+                  width: 10px; // Reduzido de 12px para 10px
+                  height: 10px; // Reduzido de 12px para 10px
+                  border-radius: 50%;
+                  border: 1px solid white; // Reduzido de 2px para 1px
+                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+                  z-index: 2;
+                }
+  
+                .event-time {
+                  font-size: 8px; // Reduzido de 9px para 8px
+                  font-weight: 700;
+                  margin-bottom: 1px; // Reduzido de 2px para 1px
+                  opacity: 0.9;
+                }
+  
+                .event-name {
+                  font-size: 10px; // Reduzido de 11px para 10px
+                  font-weight: 600;
+                  margin-bottom: 2px;
+                }
+  
+                .event-location {
+                  font-size: 9px;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  opacity: 0.8;
+  
+                  .location-icon {
+                    font-size: 10px;
+                    width: 10px;
+                    height: 10px;
+                  }
+                }
+              }
+            }
+  
+            .add-event-btn {
+              position: absolute;
+              top: 6px; // Reduzido de 8px para 6px
+              right: 6px; // Reduzido de 8px para 6px
+              opacity: 0;
+              transition: all 0.3s ease;
+              background: rgba(255, 255, 255, 0.95);
+              backdrop-filter: blur(10px);
+              width: 24px; // Reduzido de 28px para 24px
+              height: 24px; // Reduzido de 28px para 24px
+              min-width: 24px; // Reduzido de 28px para 24px
+              border-radius: 50%;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  
+              &:hover {
+                background: rgba(255, 255, 255, 1);
+                transform: scale(1.1);
+              }
+  
+              .mat-icon {
+                font-size: 16px; // Reduzido de 18px para 16px
+                width: 16px; // Reduzido de 18px para 16px
+                height: 16px; // Reduzido de 18px para 16px
+                line-height: 16px; // Reduzido de 18px para 16px
+                color: #667eea;
+              }
+            }
+  
+            &:hover .add-event-btn {
+              opacity: 1;
+            }
           }
         }
       }
     }
   }
   
+  // Week View
   .week-view {
-    height: 400px;
-    
-    .week-header,
-    .week-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%; // Usar altura do container pai
+    background: white;
+    overflow: hidden;
+  
+    .week-header {
+      display: grid;
       grid-template-columns: 50px repeat(7, 1fr);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      flex-shrink: 0; // Evitar que o cabeçalho encolha
+  
+      .time-column-header {
+        padding: 12px 9px; // Reduzido de 16px 12px para 12px 9px
+        text-align: center;
+        font-weight: 600;
+        font-size: 11px; // Reduzido de 12px para 11px
+        background: rgba(0, 0, 0, 0.1);
+        border-right: 2px solid rgba(255, 255, 255, 0.3);
+        color: white;
+      }
+  
+      .day-header {
+        padding: 12px 9px; // Reduzido de 16px 12px para 12px 9px
+        text-align: center;
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
+        transition: background-color 0.3s ease;
+  
+        &:last-child {
+          border-right: none;
+        }
+  
+        &.today {
+          background: rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(10px);
+  
+          .day-name,
+          .day-number {
+            color: white;
+            font-weight: 700;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+          }
+        }
+  
+        .day-name {
+          font-size: 10px; // Reduzido de 11px para 10px
+          margin-bottom: 3px; // Reduzido de 4px para 3px
+          font-weight: 500;
+          opacity: 0.9;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: white;
+        }
+  
+        .day-number {
+          font-size: 16px; // Reduzido de 18px para 16px
+          font-weight: 600;
+          color: white;
+        }
+      }
     }
-    
-    .time-slot {
-      height: 50px;
-      
-      &.time-column {
-        padding: 4px 2px;
-        font-size: 9px;
+  
+    .week-content {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      display: grid;
+      grid-template-columns: 50px repeat(7, 1fr);
+      background: white;
+      scroll-behavior: smooth;
+      will-change: scroll-position;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform: translateZ(0); // Força aceleração por GPU
+  
+      // Overlay para eventos posicionados absolutamente
+      .week-events-overlay {
+        position: absolute;
+        top: 0;
+        left: 50px; // Offset para a coluna de tempo
+        right: 0;
+        height: 100%;
+        z-index: 15;
+        pointer-events: none; // Permitir clique através do overlay
+        will-change: transform;
+        transform: translateZ(0); // Força aceleração por GPU
+  
+        .day-events-column {
+          position: absolute;
+          top: 0;
+          pointer-events: auto; // Reabilitar eventos nos elementos filhos
+          will-change: transform;
+          transform: translateZ(0); // Força aceleração por GPU
+  
+          .calendar-event {
+            position: absolute;
+            z-index: 16;
+          }
+        }
+      }
+  
+      .time-slot {
+        border-bottom: 2px solid #e9ecef;
+        // height: 60px; // Removido - agora controlado pelo zoom
+        position: relative;
+  
+        &.time-column {
+          background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f4 100%);
+          border-right: 2px solid #e9ecef;
+          display: flex;
+          align-items: flex-start;
+          padding: 0;
+          font-size: 10px; // Reduzido de 11px para 10px
+          color: #6c757d;
+          font-weight: 600;
+          position: sticky;
+          left: 0;
+          z-index: 10;
+          text-align: center;
+          justify-content: center;
+  
+          // Destaque para horário comercial (9h-17h)
+          &:nth-child(8n+19):nth-child(-n+35) {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffeaa7 100%);
+            color: #d68910;
+            font-weight: 700;
+          }
+  
+          &:hover {
+            background: linear-gradient(135deg, #f1f3f4 0%, #e9ecef 100%);
+          }
+        }
+  
+        &.day-column {
+          position: relative;
+          background: white;
+          transition: background-color 0.2s ease;
+          cursor: pointer;
+          border-right: 1px solid #e9ecef;
+  
+          &:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+            box-shadow: inset 2px 0 0 rgba(102, 126, 234, 0.2);
+          }
+  
+          &:active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+          }
+        }
       }
     }
   }
   
+  // Event Positioning
   .calendar-event {
-    font-size: 10px;
-    padding: 2px 4px;
-    
-    .event-title,
-    .event-time,
+    position: absolute;
+    color: black;
+    border-radius: 9px; // Reduzido de 12px para 9px
+    padding: 4px 10px; //
+    font-size: 11px; // Reduzido de 13px para 11px
+    cursor: pointer;
+    overflow: hidden;
+    z-index: 15;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  
+    &:hover {
+      transform: translateY(-3px) scale(1.02);
+      z-index: 25;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+      // Remover mudança de cor no hover para manter a cor original
+    }
+  
+    &:active {
+      transform: translateY(-1px) scale(1.01);
+      transition: all 0.1s ease;
+    }
+  
+    // Círculo indicador do usuário
+    .user-indicator {
+      position: absolute;
+      right: 2px;
+      width: 11px; // Reduzido de 14px para 11px
+      height: 11px; // Reduzido de 14px para 11px
+      border-radius: 50%;
+      border: 1px solid white; // Reduzido de 2px para 1px
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      z-index: 2;
+    }
+  
+    .event-title {
+      font-weight: 600;
+      margin-bottom: 2px;
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      text-overflow: unset;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      font-size: 12px;
+      line-height: 1.2;
+      max-width: 100%;
+      padding-right: 10px; // espaço para indicador de usuário
+    }
+  
+    .event-time {
+      font-size: 9px; // Reduzido de 11px para 9px
+      opacity: 0.9;
+      margin-bottom: 3px; // Reduzido de 4px para 3px
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 1px 4px; // Reduzido de 2px 6px para 1px 4px
+      border-radius: 4px; // Reduzido de 6px para 4px
+      display: inline-block;
+    }
+  
     .event-location {
+      font-size: 9px; // Reduzido de 11px para 9px
+      opacity: 0.85;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 3px; // Reduzido de 4px para 3px
+  
+      .mat-icon {
+        font-size: 10px;
+        font-weight: 600;
+        margin-bottom: 2px;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        text-overflow: unset;
+        line-height: 1.2;
+        max-width: 100%;
+        padding-right: 16px;
+        opacity: 0.7;
+      }
+    }
+  
+    // Variações de cor para diferentes tipos de evento
+    &.high-priority {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  
+      &:hover {
+        background: linear-gradient(135deg, #ff5252 0%, #d63031 100%);
+      }
+    }
+  
+    &.meeting {
+      background: linear-gradient(135deg, #4834d4 0%, #341f97 100%);
+  
+      &:hover {
+        background: linear-gradient(135deg, #3742fa 0%, #2f3542 100%);
+      }
+    }
+  
+    &.personal {
+      background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);
+  
+      &:hover {
+        background: linear-gradient(135deg, #00d2d3 0%, #01a3a4 100%);
+      }
+    }
+  }
+  
+  
+  // Loading State
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+  }
+}
+
+
+// Responsive Design
+@media (max-width: 768px) {
+  .calendar-container {
+    padding: 2px;
+  }
+
+  .calendar-toolbar {
+    flex-wrap: wrap;
+    min-height: 60px;
+    padding: 0 6px !important;
+    gap: 4px;
+    font-size: 13px;
+
+    .toolbar-left,
+    .toolbar-right {
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-left button,
+    .toolbar-right button,
+    .toolbar-right .mat-select {
+      min-width: 0;
+      font-size: 12px;
+      padding: 0 4px;
+      height: 28px;
+      line-height: 28px;
+    }
+
+    .toolbar-right {
+      gap: 4px;
+      min-width: 0;
+      .zoom-controls {
+        padding: 1px 2px;
+        gap: 2px;
+        .zoom-level {
+          font-size: 9px;
+          min-width: 22px;
+        }
+        .mat-icon-button {
+          width: 22px;
+          height: 22px;
+          line-height: 22px;
+          .mat-icon {
+            font-size: 13px;
+            width: 13px;
+            height: 13px;
+          }
+        }
+      }
+    }
+
+    .toolbar-center {
+      h2 {
+        font-size: 12px;
+        min-width: 0;
+        word-break: break-word;
+        margin: 0 2px;
+      }
+    }
+  }
+
+  .calendar-header {
+    flex-direction: column;
+    gap: 4px;
+    .date-navigation {
+      flex-direction: column;
+      gap: 3px;
+      h2 {
+        min-width: auto;
+      }
+    }
+  }
+
+  .month-view {
+    .calendar-grid {
+      .calendar-day {
+        min-height: 40px;
+        padding: 1px;
+        .day-events {
+          .event-item {
+            font-size: 8px;
+            white-space: normal;
+            word-break: break-word;
+            min-width: 0;
+            max-width: 100%;
+          }
+        }
+      }
+    }
+  }
+
+  .week-view {
+    .week-header {
+      grid-template-columns: 30px repeat(7, 1fr) !important;
       font-size: 9px;
+    }
+    .week-content {
+      grid-template-columns: 30px repeat(7, 1fr) !important;
+      overflow-x: hidden;
+      .week-events-overlay {
+        left: 30px !important;
+        .calendar-event {
+          font-size: 7px;
+          padding: 1px 1px;
+          border-radius: 3px;
+          .event-title,
+          .event-time,
+          .event-location {
+            font-size: 7px;
+          }
+          .event-time {
+            display: none;
+          }
+        }
+      }
+      .time-slot {
+        height: 28px;
+        &.time-column {
+          padding: 1px 1px;
+          font-size: 7px;
+        }
+      }
     }
   }
 }
@@ -827,6 +907,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
